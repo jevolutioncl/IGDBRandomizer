@@ -1,0 +1,2 @@
+Un script en Python que utiliza la API de IGDB para seleccionar aleatoriamente un videojuego de cualquier plataforma y abrir un enlace de YouTube para encontrar un gameplay del juego seleccionado.
+Creado con amor por jevolution
