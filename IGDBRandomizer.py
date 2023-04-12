@@ -1,67 +1,61 @@
 import requests
 import random
-import webbrowser
 
 # Configuración
 url = 'https://api.igdb.com/v4/games'
-client_id = 'AQUÍ PON TU CLIENT_ID DE IGDB'
-client_secret = 'AQUÍ PON TU CLIENT_SECRET DE IGDB'
-access_token = 'AQUÍ PON TU ACCESS_TOKEN DE IGDB'
-random_games_file = 'AQUÍ PON EL NOMBRE DE TU ARCHIVO .TXT DONDE GUARDARÁS EL VIDEOJUEGO ALEATORIO ELEGIDO'
+client_id = 'INSERTA TU CLIENT_ID DE LA API DE IGDB'
+client_secret = 'INSERTA TU CLIENT_SECRET DE LA API DE IGDB'
+access_token = 'INSERTA TU ACCESS_TOKEN DE LA API DE IGDB'
+random_games_file = 'INSERTA EL NOMBRE DE TU .TXT DONDE GUARDARÁS TUS JUEGOS ALEATORIOS, EJEMPLO: randomgames.txt'
+random.seed()
 
-# Obtener lista de juegos aleatorios
+# Obtener total de juegos en IGDB
 headers = {
     'Client-ID': client_id,
     'Authorization': f'Bearer {access_token}',
 }
 
-data = '''
-fields name, platforms.name, first_release_date, total_rating;
-where platforms != null;
-sort random;
-limit 10;
-'''
-
+data = 'fields id; limit 1;'
 response = requests.post(url, headers=headers, data=data)
-games = response.json()
+total_games = response.json()[0]['id']
 
 # Leer el archivo de juegos aleatorios ya seleccionados
 with open(random_games_file, 'r') as f:
     games_list = f.read().splitlines()
 
-# Verificar que hay juegos en la lista
-if len(games) == 0:
-    print('No se encontraron juegos que cumplan con los criterios de búsqueda.')
+# Verificar que hay juegos suficientes en la lista
+if len(games_list) == total_games:
+    print('Se han seleccionado todos los juegos disponibles en IGDB.')
+elif len(games_list) >= total_games - 50:
+    print('Solo quedan 50 o menos juegos disponibles en IGDB.')
 else:
-    # Elegir un juego aleatorio que no esté en la lista de juegos ya seleccionados
-    game = None
-    while game is None:
-        game = random.choice(games)
-        game_name = game.get('name', 'Nombre no disponible')
-        game_platform = game.get('platforms', [{'name': 'Plataforma no disponible'}])[0].get('name')
-        game_release_date = game.get('first_release_date', 'Año de lanzamiento no disponible')
-        game_rating = game.get('total_rating', 'Valoración no disponible')
-        game_slug = game.get('slug', 'Slug no disponible')
-        if game_name in games_list:
-            game = None
-
+    # Elegir cinco juegos aleatorios que no estén en la lista de juegos ya seleccionados
+    games = []
+    while len(games) < 50:
+        random_game_id = random.randint(1, total_games)
+        if str(random_game_id) in games_list:
+            continue
+        data = f'''
+        fields name, platforms.name, first_release_date, total_rating, slug;
+        where id = {random_game_id} & platforms != null;
+        '''
+        response = requests.post(url, headers=headers, data=data)
+        if response.status_code == 200 and len(response.json()) > 0:
+            game = response.json()[0]
+            game_name = game.get('name', 'Nombre no disponible')
+            game_platform = game.get('platforms', [{'name': 'Plataforma no disponible'}])[0].get('name')
+            game_release_date = game.get('first_release_date', 'Año de lanzamiento no disponible')
+            game_rating = game.get('total_rating', 'Valoración no disponible')
+            game_slug = game.get('slug', 'Slug no disponible')
+            games.append((random_game_id, game_name, game_platform, game_release_date, game_rating, game_slug))
+            
     with open(random_games_file, 'a') as f:
-        f.write(f'{len(games_list) + 1}. {game_name} ({game_platform}, {game_release_date}, {game_rating})\n')
+        for game in games:
+            game_info = f'{game[0]}. {game[1]} ({game[2]}, {game[3]}, {game[4]}, {game[5]})\n'
+            f.write(game_info)
 
-    print(f'Se ha elegido el juego "{game_name}" con slug "{game_slug}" aleatoriamente.')
-    
-    # Buscar gameplay en YouTube
-    search_term = f'{game_name} gameplay'
-    webbrowser.open(f'https://www.youtube.com/results?search_query={search_term}')
+    print('Se han elegido los siguientes juegos aleatorios:')
+    for i, game in enumerate(games):
+        print(f'{i+1}. {game[1]}')
 
-    # Buscar trailer en YouTube
-    search_term = f'{game_name} trailer'
-    webbrowser.open(f'https://www.youtube.com/results?search_query={search_term}')
-
-    # Buscar analisis en YouTube
-    search_term = f'{game_name} analisis'
-    webbrowser.open(f'https://www.youtube.com/results?search_query={search_term}')
-
-    # Buscar videojuego en Google
-    search_term = f'{game_name}'
-    webbrowser.open(f'https://www.google.com/search?q={search_term}')
+input("Presione enter para salir...")
