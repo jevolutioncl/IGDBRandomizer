@@ -1,12 +1,13 @@
 import requests
 import random
+import webbrowser
 
 # Configuración
 url = 'https://api.igdb.com/v4/games'
-client_id = 'INSERTA TU CLIENT_ID DE LA API DE IGDB'
-client_secret = 'INSERTA TU CLIENT_SECRET DE LA API DE IGDB'
-access_token = 'INSERTA TU ACCESS_TOKEN DE LA API DE IGDB'
-random_games_file = 'INSERTA EL NOMBRE DE TU .TXT DONDE GUARDARÁS TUS JUEGOS ALEATORIOS, EJEMPLO: randomgames.txt'
+client_id = 'INSERTA TU CLIENT_ID DE LA API DE IGDB AQUÍ'
+client_secret = 'INSERTA TU CLIENT_SECRET DE LA API DE IGDB AQUÍ'
+access_token = 'INSERTA TU ACCESS_TOKEN DE LA API DE IGDB AQUÍ'
+random_games_file = 'INSERTA EL NOMBRE DEL ARCHIVO .TXT DONDE SE GUARDARÁN LOS JUEGOS ALEATORIOS AQUÍ'
 random.seed()
 
 # Obtener total de juegos en IGDB
@@ -57,5 +58,29 @@ else:
     print('Se han elegido los siguientes juegos aleatorios:')
     for i, game in enumerate(games):
         print(f'{i+1}. {game[1]}')
+    while True:
+        selected_games_input = input(f'\nSeleccione uno o varios juegos de la lista (1-{len(games)}) separados por comas: ')
+        selected_games_numbers = []
 
+        # Extraer los números de los juegos seleccionados
+        try:
+            selected_games_numbers = [int(num.strip()) for num in selected_games_input.split(',') if num.strip().isdigit()]
+        except ValueError:
+            print('Por favor, ingrese números válidos separados por comas.')
+
+        # Abrir enlaces de los juegos seleccionados
+        for game_number in selected_games_numbers:
+            if 1 <= game_number <= len(games):
+                game_slug = games[game_number - 1][5]
+                game_url = f'https://www.igdb.com/games/{game_slug}'
+                webbrowser.open(game_url)
+            else:
+                print(f'El número {game_number} está fuera del rango de la lista.')
+
+        user_choice = ''
+        while user_choice.lower() not in ['s', 'r']:
+            user_choice = input('Ingrese "r" para regresar y seleccionar otro juego, o "s" para salir: ')
+
+        if user_choice.lower() == 's':
+            break
 input("Presione enter para salir...")
