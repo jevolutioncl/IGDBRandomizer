@@ -1,0 +1,4 @@
+.env
+games.txt
+__pycache__/
+*.pyc
